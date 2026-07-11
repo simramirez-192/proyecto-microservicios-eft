@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>4.1.0</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.example</groupId>
+	<artifactId>ms-gateway</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>ms-gateway</name>
+	<description>API Gateway - punto de entrada unico para todos los microservicios</description>
+	<properties>
+		<java.version>21</java.version>
+		<!--
+			OJO: la version de Spring Cloud debe ser compatible con la version
+			de Spring Boot del parent de arriba. Si al compilar te marca error
+			de dependencias, revisa la tabla de compatibilidad oficial en:
+			https://spring.io/projects/spring-cloud#overview
+			y cambia el numero de abajo por el que corresponda.
+		-->
+		<spring-cloud.version>2024.0.0</spring-cloud.version>
+	</properties>
+
+	<dependencies>
+		<!-- Esta es LA dependencia clave: convierte este proyecto en un API Gateway -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-gateway</artifactId>
+		</dependency>
+	</dependencies>
+
+	<!-- El dependencyManagement importa el "BOM" de Spring Cloud, que fija
+	     las versiones correctas de todas las librerias de Spring Cloud entre si -->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

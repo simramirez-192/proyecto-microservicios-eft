@@ -1,0 +1,52 @@
+# =========================================================
+# Configuracion del API Gateway
+# =========================================================
+
+server:
+  port: 8090   # Puerto UNICO por el que entra TODO el trafico
+
+spring:
+  application:
+    name: ms-gateway
+
+  cloud:
+    gateway:
+      # Aqui defines las "reglas de trafico": que ruta va a que microservicio.
+      # Es la parte que cubre IE 3.3.2 y 3.3.3 de la rubrica.
+      routes:
+
+        - id: ms-producto                                   # nombre interno de la regla
+          uri: ${MS_PRODUCTO_URL:http://localhost:8080}      # a donde reenviar
+          predicates:
+            - Path=/api/productos/**                         # que rutas activan esta regla
+
+        - id: ms-inventario
+          uri: ${MS_INVENTARIO_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/inventario/**
+
+        - id: ms-cliente
+          uri: ${MS_CLIENTE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/clientes/**
+
+        - id: ms-pedido
+          uri: ${MS_PEDIDO_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/pedidos/**
+
+        - id: ms-pago
+          uri: ${MS_PAGO_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/pagos/**
+
+# ---------------------------------------------------------
+# Como funciona el "${MS_PRODUCTO_URL:http://localhost:8080}":
+#   - Si existe una variable de entorno MS_PRODUCTO_URL, la usa a ella.
+#   - Si NO existe (por ejemplo cuando corres el gateway en tu PC sin Docker),
+#     usa el valor por defecto despues de los ":" -> http://localhost:8080
+#
+# Eso es lo que nos permite usar EL MISMO application.yml tanto si corres
+# el gateway a mano (local) como si lo corres dentro de docker-compose
+# (donde las URLs apuntan a los nombres de los servicios, no a localhost).
+# ---------------------------------------------------------

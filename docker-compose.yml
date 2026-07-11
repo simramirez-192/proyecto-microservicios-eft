@@ -1,0 +1,166 @@
+services:
+
+  # ------------------------------------------------------------------
+  # Base de datos MySQL compartida por todos los microservicios
+  # (cada uno tiene su propia base de datos dentro de este mismo servidor)
+  # ------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-microservicios
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-producto
+  # ------------------------------------------------------------------
+  ms-producto:
+    build: ./ms-producto
+    container_name: ms-producto
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/primer_proyecto_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - "8080:8080"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-inventario (depende de ms-producto)
+  # ------------------------------------------------------------------
+  ms-inventario:
+    build: ./ms-inventario
+    container_name: ms-inventario
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-producto:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_inventario_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      # Dentro de Docker, los microservicios se llaman entre si por el
+      # NOMBRE DEL SERVICIO (ms-producto), no por "localhost"
+      MS_PRODUCTO_URL: http://ms-producto:8080/api/productos
+    ports:
+      - "8081:8081"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-cliente
+  # ------------------------------------------------------------------
+  ms-cliente:
+    build: ./ms-cliente
+    container_name: ms-cliente
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_cliente_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - "8082:8082"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-pedido (depende de ms-cliente y ms-producto)
+  # ------------------------------------------------------------------
+  ms-pedido:
+    build: ./ms-pedido
+    container_name: ms-pedido
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-cliente:
+        condition: service_started
+      ms-producto:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_pedido_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      MS_CLIENTE_URL: http://ms-cliente:8082/api/clientes
+      MS_PRODUCTO_URL: http://ms-producto:8080/api/productos
+    ports:
+      - "8083:8083"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-pago (depende de ms-pedido)
+  # ------------------------------------------------------------------
+  ms-pago:
+    build: ./ms-pago
+    container_name: ms-pago
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-pedido:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_pago_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      MS_PEDIDO_URL: http://ms-pedido:8083/api/pedidos
+    ports:
+      - "8084:8084"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-gateway (API Gateway) - depende de que los demas ya esten arriba
+  # ------------------------------------------------------------------
+  ms-gateway:
+    build: ./ms-gateway
+    container_name: ms-gateway
+    restart: unless-stopped
+    depends_on:
+      - ms-producto
+      - ms-inventario
+      - ms-cliente
+      - ms-pedido
+      - ms-pago
+    environment:
+      # Le decimos al Gateway donde vive cada microservicio DENTRO de la red
+      # de Docker (por nombre de servicio, no por localhost)
+      MS_PRODUCTO_URL: http://ms-producto:8080
+      MS_INVENTARIO_URL: http://ms-inventario:8081
+      MS_CLIENTE_URL: http://ms-cliente:8082
+      MS_PEDIDO_URL: http://ms-pedido:8083
+      MS_PAGO_URL: http://ms-pago:8084
+    ports:
+      - "8090:8090"
+    networks:
+      - microservicios-net
+
+networks:
+  microservicios-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
