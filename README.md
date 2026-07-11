@@ -21,7 +21,8 @@ y los pagos generados a partir de esos pedidos.
 
 ## Estudiantes
 
-- **Jazmin Soto** (completar con los integrantes reales del equipo)
+- **Jazmin Soto**
+- **Jorge Delgado**
 
 ## Microservicios implementados
 
@@ -32,6 +33,11 @@ y los pagos generados a partir de esos pedidos.
 | `ms-cliente`    | 8082   | CRUD de clientes.                                                             |
 | `ms-pedido`     | 8083   | CRUD de pedidos. Consume `ms-cliente` y `ms-producto` para armar el pedido.  |
 | `ms-pago`       | 8084   | CRUD de pagos. Consume `ms-pedido` para obtener el monto a pagar.            |
+| `ms-categoria`  | 8085   | CRUD de categorias de productos.                                              |
+| `ms-envio`      | 8086   | CRUD de envios. Consume `ms-pedido` para validar el pedido.                  |
+| `ms-cupon`      | 8087   | CRUD de cupones de descuento.                                                 |
+| `ms-opinion`    | 8088   | CRUD de opiniones. Consume `ms-cliente` y `ms-producto` para validar.        |
+| `ms-notificacion` | 8089 | CRUD de notificaciones. Consume `ms-cliente` para validar el cliente.       |
 | `ms-gateway`    | 8090   | API Gateway (Spring Cloud Gateway). Punto de entrada unico a todo el sistema. |
 
 Cada microservicio sigue el patron **CSR (Controller - Service - Repository/Model)**, con DTOs de entrada/salida,
@@ -93,6 +99,10 @@ validaciones con Bean Validation, manejo centralizado de errores (`@RestControll
 | ms-pedido | ms-producto | GET /api/productos/{id} |
 | ms-pedido | ms-cliente | GET /api/clientes/{id} |
 | ms-pago | ms-pedido | GET /api/pedidos/{id} |
+| ms-envio | ms-pedido | GET /api/pedidos/{id} |
+| ms-opinion | ms-cliente | GET /api/clientes/{id} |
+| ms-opinion | ms-producto | GET /api/productos/{id} |
+| ms-notificacion | ms-cliente | GET /api/clientes/{id} |
 
 ## Rutas principales del Gateway
 
@@ -104,6 +114,11 @@ en el puerto **8090**:
 - `http://localhost:8090/api/clientes`
 - `http://localhost:8090/api/pedidos`
 - `http://localhost:8090/api/pagos`
+- `http://localhost:8090/api/categorias`
+- `http://localhost:8090/api/envios`
+- `http://localhost:8090/api/cupones`
+- `http://localhost:8090/api/opiniones`
+- `http://localhost:8090/api/notificaciones`
 
 ## Documentacion Swagger / OpenAPI
 
@@ -115,6 +130,11 @@ propios):
 - ms-cliente: `http://localhost:8082/swagger-ui/index.html`
 - ms-pedido: `http://localhost:8083/swagger-ui/index.html`
 - ms-pago: `http://localhost:8084/swagger-ui/index.html`
+- ms-categoria: `http://localhost:8085/swagger-ui/index.html`
+- ms-envio: `http://localhost:8086/swagger-ui/index.html`
+- ms-cupon: `http://localhost:8087/swagger-ui/index.html`
+- ms-opinion: `http://localhost:8088/swagger-ui/index.html`
+- ms-notificacion: `http://localhost:8089/swagger-ui/index.html`
 
 ## Endpoints principales
 
@@ -168,6 +188,57 @@ propios):
 | PUT | /api/pagos/{id} | Actualizar pago |
 | DELETE | /api/pagos/{id} | Eliminar pago |
 
+### ms-categoria (puerto 8085)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/categorias | Listar todas las categorias |
+| GET | /api/categorias/{id} | Obtener categoria por ID |
+| POST | /api/categorias | Crear nueva categoria |
+| PUT | /api/categorias/{id} | Actualizar categoria |
+| DELETE | /api/categorias/{id} | Eliminar categoria |
+
+### ms-envio (puerto 8086)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/envios | Listar todos los envios |
+| GET | /api/envios/{id} | Obtener envio por ID |
+| POST | /api/envios | Crear nuevo envio |
+| PUT | /api/envios/{id} | Actualizar envio |
+| DELETE | /api/envios/{id} | Eliminar envio |
+
+### ms-cupon (puerto 8087)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/cupones | Listar todos los cupones |
+| GET | /api/cupones/{id} | Obtener cupon por ID |
+| POST | /api/cupones | Crear nuevo cupon |
+| PUT | /api/cupones/{id} | Actualizar cupon |
+| DELETE | /api/cupones/{id} | Eliminar cupon |
+
+### ms-opinion (puerto 8088)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/opiniones | Listar todas las opiniones |
+| GET | /api/opiniones/{id} | Obtener opinion por ID |
+| POST | /api/opiniones | Crear nueva opinion |
+| PUT | /api/opiniones/{id} | Actualizar opinion |
+| DELETE | /api/opiniones/{id} | Eliminar opinion |
+
+### ms-notificacion (puerto 8089)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/notificaciones | Listar todas las notificaciones |
+| GET | /api/notificaciones/{id} | Obtener notificacion por ID |
+| POST | /api/notificaciones | Crear nueva notificacion |
+| PUT | /api/notificaciones/{id} | Actualizar notificacion |
+| DELETE | /api/notificaciones/{id} | Eliminar notificacion |
+| PATCH | /api/notificaciones/{id}/leer | Marcar como leida |
+
 ## Instrucciones de ejecucion
 
 ### Local (con MySQL corriendo en el equipo)
@@ -190,7 +261,7 @@ Desde la raiz del proyecto (donde esta `docker-compose.yml`):
 docker compose up --build
 ```
 
-Esto levanta MySQL (con las 5 bases de datos creadas automaticamente) y los 6 microservicios en una misma red.
+Esto levanta MySQL (con las 11 bases de datos creadas automaticamente) y los 11 microservicios en una misma red.
 
 Para apagar todo:
 
