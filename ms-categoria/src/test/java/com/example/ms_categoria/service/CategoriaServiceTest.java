@@ -121,4 +121,124 @@ class CategoriaServiceTest {
         assertThrows(RuntimeException.class,
                 () -> categoriaService.eliminarCategoria(99L));
     }
+
+    @Test
+    void listarCategorias_listaVacia_retornaListaVacia() {
+        when(categoriaRepository.findAll()).thenReturn(List.of());
+
+        List<CategoriaResponseDTO> resultado = categoriaService.listarCategorias();
+
+        assertNotNull(resultado);
+        assertTrue(resultado.isEmpty());
+    }
+
+    @Test
+    void listarCategoriasMultiples_retornaTodosLosItems() {
+        Categoria cat2 = new Categoria();
+        cat2.setId(2L);
+        cat2.setNombre("Ropa");
+        cat2.setDescripcion("Productos de vestir");
+
+        when(categoriaRepository.findAll()).thenReturn(List.of(categoria, cat2));
+
+        List<CategoriaResponseDTO> resultado = categoriaService.listarCategorias();
+
+        assertEquals(2, resultado.size());
+        assertEquals("Electronica", resultado.get(0).getNombre());
+        assertEquals("Ropa", resultado.get(1).getNombre());
+    }
+
+    @Test
+    void crearCategoria_verificaCamposGuardados() {
+        Categoria guardada = new Categoria();
+        guardada.setId(5L);
+        guardada.setNombre("Deportes");
+        guardada.setDescripcion("Articulos deportivos");
+
+        when(categoriaRepository.save(any(Categoria.class))).thenReturn(guardada);
+
+        CategoriaResponseDTO resultado = categoriaService.crearCategoria(requestDTO);
+
+        assertNotNull(resultado);
+        assertEquals(5L, resultado.getId());
+        assertEquals("Deportes", resultado.getNombre());
+        assertEquals("Articulos deportivos", resultado.getDescripcion());
+
+        verify(categoriaRepository).save(argThat(cat ->
+                cat.getNombre().equals("Electronica") &&
+                cat.getDescripcion().equals("Productos electronicos")
+        ));
+    }
+
+    @Test
+    void actualizarCategoria_verificaCamposActualizados() {
+        Categoria actualizada = new Categoria();
+        actualizada.setId(1L);
+        actualizada.setNombre("Hogar");
+        actualizada.setDescripcion("Articulos del hogar");
+
+        CategoriaRequestDTO requestActualizado = new CategoriaRequestDTO();
+        requestActualizado.setNombre("Hogar");
+        requestActualizado.setDescripcion("Articulos del hogar");
+
+        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
+        when(categoriaRepository.save(any(Categoria.class))).thenReturn(actualizada);
+
+        CategoriaResponseDTO resultado = categoriaService.actualizarCategoria(1L, requestActualizado);
+
+        assertEquals("Hogar", resultado.getNombre());
+        assertEquals("Articulos del hogar", resultado.getDescripcion());
+        verify(categoriaRepository).save(argThat(cat ->
+                cat.getNombre().equals("Hogar") &&
+                cat.getDescripcion().equals("Articulos del hogar")
+        ));
+    }
+
+    @Test
+    void buscarPorId_retornaIdCorrecto() {
+        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
+
+        CategoriaResponseDTO resultado = categoriaService.buscarPorId(1L);
+
+        assertEquals(1L, resultado.getId());
+    }
+
+    @Test
+    void eliminarCategoria_categoriaNoExiste_lanzaExcepcionConMensaje() {
+        when(categoriaRepository.existsById(99L)).thenReturn(false);
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> categoriaService.eliminarCategoria(99L));
+
+        assertTrue(ex.getMessage().contains("99"));
+    }
+
+    @Test
+    void buscarPorId_categoriaNoExistente_lanzaExcepcionConMensaje() {
+        when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> categoriaService.buscarPorId(99L));
+
+        assertTrue(ex.getMessage().contains("99"));
+    }
+
+    @Test
+    void actualizarCategoria_categoriaNoExiste_lanzaExcepcionConMensaje() {
+        when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> categoriaService.actualizarCategoria(99L, requestDTO));
+
+        assertTrue(ex.getMessage().contains("99"));
+    }
+
+    @Test
+    void listarCategorias_verificarQueSeLlamaAFindAll() {
+        when(categoriaRepository.findAll()).thenReturn(List.of());
+
+        categoriaService.listarCategorias();
+
+        verify(categoriaRepository, times(1)).findAll();
+    }
 }

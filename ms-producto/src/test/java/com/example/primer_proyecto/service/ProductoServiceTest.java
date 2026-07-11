@@ -152,4 +152,191 @@ class ProductoServiceTest {
 
         verify(productoRepository, never()).deleteById(any());
     }
+
+    @Test
+    void listarProductos_multiplesProductos_retornaTodos() {
+        Producto otro = new Producto();
+        otro.setId(2L);
+        otro.setNombre("Teclado Mecanico");
+        otro.setDescripcion("RGB");
+        otro.setPrecio(45000.0);
+        otro.setStock(25);
+
+        when(productoRepository.findAll()).thenReturn(List.of(producto, otro));
+
+        List<ProductoResponseDTO> resultado = productoService.listarProductos();
+
+        assertEquals(2, resultado.size());
+        assertEquals("Mouse Gamer", resultado.get(0).getNombre());
+        assertEquals("Teclado Mecanico", resultado.get(1).getNombre());
+    }
+
+    @Test
+    void listarProductos_verificaCamposDelDTO() {
+        when(productoRepository.findAll()).thenReturn(List.of(producto));
+
+        List<ProductoResponseDTO> resultado = productoService.listarProductos();
+
+        assertEquals(1, resultado.size());
+        ProductoResponseDTO dto = resultado.get(0);
+        assertEquals(1L, dto.getId());
+        assertEquals("Mouse Gamer", dto.getNombre());
+        assertEquals("Mouse inalambrico", dto.getDescripcion());
+        assertEquals(15990.0, dto.getPrecio());
+        assertEquals(50, dto.getStock());
+    }
+
+    @Test
+    void crearProducto_stockCero_creaCorrectamente() {
+        requestDTO.setStock(0);
+
+        Producto guardado = new Producto();
+        guardado.setId(2L);
+        guardado.setNombre("Mouse Gamer");
+        guardado.setDescripcion("Mouse inalambrico");
+        guardado.setPrecio(15990.0);
+        guardado.setStock(0);
+
+        when(productoRepository.save(any(Producto.class))).thenReturn(guardado);
+
+        ProductoResponseDTO resultado = productoService.crearProducto(requestDTO);
+
+        assertNotNull(resultado);
+        assertEquals(0, resultado.getStock());
+        assertEquals(2L, resultado.getId());
+    }
+
+    @Test
+    void crearProducto_stockNegativo_creaCorrectamente() {
+        requestDTO.setStock(-10);
+
+        Producto guardado = new Producto();
+        guardado.setId(3L);
+        guardado.setNombre("Mouse Gamer");
+        guardado.setDescripcion("Mouse inalambrico");
+        guardado.setPrecio(15990.0);
+        guardado.setStock(-10);
+
+        when(productoRepository.save(any(Producto.class))).thenReturn(guardado);
+
+        ProductoResponseDTO resultado = productoService.crearProducto(requestDTO);
+
+        assertNotNull(resultado);
+        assertEquals(-10, resultado.getStock());
+    }
+
+    @Test
+    void crearProducto_precioDecimal_creaCorrectamente() {
+        requestDTO.setPrecio(9999.99);
+
+        Producto guardado = new Producto();
+        guardado.setId(4L);
+        guardado.setNombre("Mouse Gamer");
+        guardado.setDescripcion("Mouse inalambrico");
+        guardado.setPrecio(9999.99);
+        guardado.setStock(50);
+
+        when(productoRepository.save(any(Producto.class))).thenReturn(guardado);
+
+        ProductoResponseDTO resultado = productoService.crearProducto(requestDTO);
+
+        assertNotNull(resultado);
+        assertEquals(9999.99, resultado.getPrecio());
+    }
+
+    @Test
+    void crearProducto_verificaQueSeCopianTodosLosCampos() {
+        requestDTO.setNombre("Teclado RGB");
+        requestDTO.setDescripcion("Teclado mecanico");
+        requestDTO.setPrecio(45000.0);
+        requestDTO.setStock(30);
+
+        when(productoRepository.save(argThat(p ->
+                p.getNombre().equals("Teclado RGB") &&
+                p.getDescripcion().equals("Teclado mecanico") &&
+                p.getPrecio().equals(45000.0) &&
+                p.getStock().equals(30)
+        ))).thenReturn(producto);
+
+        ProductoResponseDTO resultado = productoService.crearProducto(requestDTO);
+
+        assertNotNull(resultado);
+        verify(productoRepository).save(any(Producto.class));
+    }
+
+    @Test
+    void actualizarProducto_modificaTodosLosCampos() {
+        Producto existente = new Producto();
+        existente.setId(1L);
+        existente.setNombre("Nombre Viejo");
+        existente.setDescripcion("Desc Vieja");
+        existente.setPrecio(1000.0);
+        existente.setStock(10);
+
+        ProductoRequestDTO requestActualizado = new ProductoRequestDTO();
+        requestActualizado.setNombre("Nombre Nuevo");
+        requestActualizado.setDescripcion("Desc Nueva");
+        requestActualizado.setPrecio(20000.0);
+        requestActualizado.setStock(100);
+
+        Producto actualizado = new Producto();
+        actualizado.setId(1L);
+        actualizado.setNombre("Nombre Nuevo");
+        actualizado.setDescripcion("Desc Nueva");
+        actualizado.setPrecio(20000.0);
+        actualizado.setStock(100);
+
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(productoRepository.save(any(Producto.class))).thenReturn(actualizado);
+
+        ProductoResponseDTO resultado = productoService.actualizarProducto(1L, requestActualizado);
+
+        assertNotNull(resultado);
+        assertEquals("Nombre Nuevo", resultado.getNombre());
+        assertEquals("Desc Nueva", resultado.getDescripcion());
+        assertEquals(20000.0, resultado.getPrecio());
+        assertEquals(100, resultado.getStock());
+    }
+
+    @Test
+    void actualizarProducto_verificaCamposModificados() {
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+        when(productoRepository.save(argThat(p ->
+                p.getNombre().equals("Mouse Gamer") &&
+                p.getPrecio().equals(15990.0)
+        ))).thenReturn(producto);
+
+        ProductoResponseDTO resultado = productoService.actualizarProducto(1L, requestDTO);
+
+        assertNotNull(resultado);
+        verify(productoRepository).save(argThat(p ->
+                p.getNombre().equals("Mouse Gamer") &&
+                p.getDescripcion().equals("Mouse inalambrico") &&
+                p.getPrecio().equals(15990.0) &&
+                p.getStock().equals(50)
+        ));
+    }
+
+    @Test
+    void buscarPorId_verificaTodosLosCamposDelDTO() {
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+
+        ProductoResponseDTO resultado = productoService.buscarPorId(1L);
+
+        assertEquals(1L, resultado.getId());
+        assertEquals("Mouse Gamer", resultado.getNombre());
+        assertEquals("Mouse inalambrico", resultado.getDescripcion());
+        assertEquals(15990.0, resultado.getPrecio());
+        assertEquals(50, resultado.getStock());
+    }
+
+    @Test
+    void eliminarProducto_verificaQueSeLlamaDeleteByIdUnaVez() {
+        when(productoRepository.existsById(1L)).thenReturn(true);
+
+        productoService.eliminarProducto(1L);
+
+        verify(productoRepository, times(1)).deleteById(1L);
+        verify(productoRepository, times(1)).existsById(1L);
+    }
 }

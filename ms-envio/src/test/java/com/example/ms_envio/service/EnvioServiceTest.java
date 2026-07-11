@@ -133,4 +133,155 @@ class EnvioServiceTest {
         assertThrows(RuntimeException.class,
                 () -> envioService.eliminarEnvio(99L));
     }
+
+    @Test
+    void listarEnvios_listaVacia_retornaListaVacia() {
+        when(envioRepository.findAll()).thenReturn(List.of());
+
+        List<EnvioResponseDTO> resultado = envioService.listarEnvios();
+
+        assertNotNull(resultado);
+        assertTrue(resultado.isEmpty());
+        verify(pedidoClient, never()).obtenerPedidoPorId(any());
+    }
+
+    @Test
+    void listarEnvios_pedidoNoDisponible_nombreNoDisponible() {
+        when(envioRepository.findAll()).thenReturn(List.of(envio));
+        when(pedidoClient.obtenerPedidoPorId(10L)).thenReturn(null);
+
+        List<EnvioResponseDTO> resultado = envioService.listarEnvios();
+
+        assertEquals(1, resultado.size());
+        assertEquals("Pedido no disponible", resultado.get(0).getNombrePedido());
+    }
+
+    @Test
+    void buscarPorId_pedidoNoDisponible_nombreNoDisponible() {
+        when(envioRepository.findById(1L)).thenReturn(Optional.of(envio));
+        when(pedidoClient.obtenerPedidoPorId(10L)).thenReturn(null);
+
+        EnvioResponseDTO resultado = envioService.buscarPorId(1L);
+
+        assertNotNull(resultado);
+        assertEquals("Pedido no disponible", resultado.getNombrePedido());
+        assertEquals(1L, resultado.getId());
+        assertEquals(10L, resultado.getPedidoId());
+        assertEquals("Calle Principal 123", resultado.getDireccion());
+    }
+
+    @Test
+    void actualizarEnvio_datosValidos_actualizaCorrectamente() {
+        when(envioRepository.findById(1L)).thenReturn(Optional.of(envio));
+        when(pedidoClient.obtenerPedidoPorId(10L)).thenReturn(pedidoDTO);
+        when(envioRepository.save(any(Envio.class))).thenReturn(envio);
+
+        EnvioResponseDTO resultado = envioService.actualizarEnvio(1L, requestDTO);
+
+        assertEquals("Pedido #10", resultado.getNombrePedido());
+        verify(envioRepository).save(envio);
+    }
+
+    @Test
+    void actualizarEnvio_pedidoNoExiste_lanzaExcepcion() {
+        when(envioRepository.findById(1L)).thenReturn(Optional.of(envio));
+        when(pedidoClient.obtenerPedidoPorId(10L)).thenReturn(null);
+
+        assertThrows(RuntimeException.class, () -> envioService.actualizarEnvio(1L, requestDTO));
+        verify(envioRepository, never()).save(any());
+    }
+
+    @Test
+    void crearEnvio_guardaCamposCorrectamente() {
+        Envio guardado = new Envio();
+        guardado.setId(5L);
+        guardado.setPedidoId(10L);
+        guardado.setDireccion("Calle Principal 123");
+        guardado.setEstado("PENDIENTE");
+        guardado.setFechaEnvio(LocalDateTime.now());
+
+        when(pedidoClient.obtenerPedidoPorId(10L)).thenReturn(pedidoDTO);
+        when(envioRepository.save(any(Envio.class))).thenReturn(guardado);
+
+        EnvioResponseDTO resultado = envioService.crearEnvio(requestDTO);
+
+        assertNotNull(resultado);
+        assertEquals(5L, resultado.getId());
+        assertEquals(10L, resultado.getPedidoId());
+        assertEquals("PENDIENTE", resultado.getEstado());
+        assertEquals("Pedido #10", resultado.getNombrePedido());
+
+        verify(envioRepository).save(argThat(env ->
+                env.getPedidoId().equals(10L) &&
+                env.getDireccion().equals("Calle Principal 123") &&
+                env.getEstado().equals("PENDIENTE") &&
+                env.getFechaEnvio() != null
+        ));
+    }
+
+    @Test
+    void actualizarEnvio_verificaCamposActualizados() {
+        EnvioRequestDTO requestActualizado = new EnvioRequestDTO();
+        requestActualizado.setPedidoId(20L);
+        requestActualizado.setDireccion("Avenida Nueva 456");
+
+        PedidoDTO otroPedido = new PedidoDTO(20L, 3L, 8L, 1, 25000.0, "ENVIADO");
+
+        Envio actualizado = new Envio();
+        actualizado.setId(1L);
+        actualizado.setPedidoId(20L);
+        actualizado.setDireccion("Avenida Nueva 456");
+        actualizado.setEstado("PENDIENTE");
+        actualizado.setFechaEnvio(LocalDateTime.now());
+
+        when(envioRepository.findById(1L)).thenReturn(Optional.of(envio));
+        when(pedidoClient.obtenerPedidoPorId(20L)).thenReturn(otroPedido);
+        when(envioRepository.save(any(Envio.class))).thenReturn(actualizado);
+
+        EnvioResponseDTO resultado = envioService.actualizarEnvio(1L, requestActualizado);
+
+        assertEquals("Pedido #20", resultado.getNombrePedido());
+        assertEquals("Avenida Nueva 456", resultado.getDireccion());
+        verify(envioRepository).save(argThat(e ->
+                e.getPedidoId().equals(20L) &&
+                e.getDireccion().equals("Avenida Nueva 456")
+        ));
+    }
+
+    @Test
+    void listarEnviosMultiplesItems_todosLosNombresCorrectos() {
+        Envio envio2 = new Envio();
+        envio2.setId(2L);
+        envio2.setPedidoId(20L);
+        envio2.setDireccion("Avenida Nueva 456");
+        envio2.setEstado("ENVIADO");
+        envio2.setFechaEnvio(LocalDateTime.now());
+
+        PedidoDTO pedido2 = new PedidoDTO(20L, 3L, 8L, 1, 25000.0, "ENVIADO");
+
+        when(envioRepository.findAll()).thenReturn(List.of(envio, envio2));
+        when(pedidoClient.obtenerPedidoPorId(10L)).thenReturn(pedidoDTO);
+        when(pedidoClient.obtenerPedidoPorId(20L)).thenReturn(pedido2);
+
+        List<EnvioResponseDTO> resultado = envioService.listarEnvios();
+
+        assertEquals(2, resultado.size());
+        assertEquals("Pedido #10", resultado.get(0).getNombrePedido());
+        assertEquals("Pedido #20", resultado.get(1).getNombrePedido());
+    }
+
+    @Test
+    void buscarPorId_retornaTodosLosCampos() {
+        when(envioRepository.findById(1L)).thenReturn(Optional.of(envio));
+        when(pedidoClient.obtenerPedidoPorId(10L)).thenReturn(pedidoDTO);
+
+        EnvioResponseDTO resultado = envioService.buscarPorId(1L);
+
+        assertEquals(1L, resultado.getId());
+        assertEquals(10L, resultado.getPedidoId());
+        assertEquals("Pedido #10", resultado.getNombrePedido());
+        assertEquals("Calle Principal 123", resultado.getDireccion());
+        assertEquals("PENDIENTE", resultado.getEstado());
+        assertNotNull(resultado.getFechaEnvio());
+    }
 }
