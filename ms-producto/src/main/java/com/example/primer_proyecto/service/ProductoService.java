@@ -48,6 +48,7 @@ public class ProductoService {
         producto.setDescripcion(requestDTO.getDescripcion());
         producto.setPrecio(requestDTO.getPrecio());
         producto.setStock(requestDTO.getStock());
+        producto.setCategoriaId(requestDTO.getCategoriaId());
 
         Producto guardado = productoRepository.save(producto);
         logger.info("Producto creado con id: {} - nombre: {}", guardado.getId(), guardado.getNombre());
@@ -66,6 +67,7 @@ public class ProductoService {
         producto.setDescripcion(requestDTO.getDescripcion());
         producto.setPrecio(requestDTO.getPrecio());
         producto.setStock(requestDTO.getStock());
+        producto.setCategoriaId(requestDTO.getCategoriaId());
 
         Producto actualizado = productoRepository.save(producto);
         logger.info("Producto actualizado con id: {}", actualizado.getId());
@@ -89,7 +91,8 @@ public class ProductoService {
                 producto.getNombre(),
                 producto.getDescripcion(),
                 producto.getPrecio(),
-                producto.getStock()
+                producto.getStock(),
+                producto.getCategoriaId()
         );
     }
 }

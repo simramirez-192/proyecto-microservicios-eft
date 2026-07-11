@@ -45,12 +45,14 @@ class ProductoServiceTest {
         producto.setDescripcion("Mouse inalambrico");
         producto.setPrecio(15990.0);
         producto.setStock(50);
+        producto.setCategoriaId(1L);
 
         requestDTO = new ProductoRequestDTO();
         requestDTO.setNombre("Mouse Gamer");
         requestDTO.setDescripcion("Mouse inalambrico");
         requestDTO.setPrecio(15990.0);
         requestDTO.setStock(50);
+        requestDTO.setCategoriaId(1L);
     }
 
     @Test

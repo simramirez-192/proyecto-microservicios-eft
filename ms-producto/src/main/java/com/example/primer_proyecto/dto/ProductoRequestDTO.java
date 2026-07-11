@@ -23,4 +23,6 @@ public class ProductoRequestDTO {
     @NotNull(message = "El stock es obligatorio")
     @PositiveOrZero(message = "El stock no puede ser negativo")
     private Integer stock;
+
+    private Long categoriaId;
 }

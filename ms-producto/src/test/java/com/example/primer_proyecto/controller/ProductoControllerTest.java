@@ -44,12 +44,13 @@ class ProductoControllerTest {
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
 
-        responseDTO = new ProductoResponseDTO(1L, "Mouse Gamer", "Mouse inalambrico", 15990.0, 50);
+        responseDTO = new ProductoResponseDTO(1L, "Mouse Gamer", "Mouse inalambrico", 15990.0, 50, 1L);
         requestDTO = new ProductoRequestDTO();
         requestDTO.setNombre("Mouse Gamer");
         requestDTO.setDescripcion("Mouse inalambrico");
         requestDTO.setPrecio(15990.0);
         requestDTO.setStock(50);
+        requestDTO.setCategoriaId(1L);
     }
 
     @Test
@@ -78,7 +79,7 @@ class ProductoControllerTest {
 
     @Test
     void listarProductos_multiplesProductos_retorna200() throws Exception {
-        ProductoResponseDTO otro = new ProductoResponseDTO(2L, "Teclado Mecanico", "RGB", 45000.0, 25);
+        ProductoResponseDTO otro = new ProductoResponseDTO(2L, "Teclado Mecanico", "RGB", 45000.0, 25, 1L);
         when(productoService.listarProductos()).thenReturn(List.of(responseDTO, otro));
 
         mockMvc.perform(get("/api/productos"))
