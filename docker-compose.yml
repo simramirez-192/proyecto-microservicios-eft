@@ -133,6 +133,113 @@ services:
       - microservicios-net
 
   # ------------------------------------------------------------------
+  # ms-categoria
+  # ------------------------------------------------------------------
+  ms-categoria:
+    build: ./ms-categoria
+    container_name: ms-categoria
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_categoria_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - "8085:8085"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-envio (depende de ms-pedido)
+  # ------------------------------------------------------------------
+  ms-envio:
+    build: ./ms-envio
+    container_name: ms-envio
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-pedido:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_envio_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      MS_PEDIDO_URL: http://ms-pedido:8083/api/pedidos
+    ports:
+      - "8086:8086"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-cupon
+  # ------------------------------------------------------------------
+  ms-cupon:
+    build: ./ms-cupon
+    container_name: ms-cupon
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_cupon_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - "8087:8087"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-opinion (depende de ms-cliente y ms-producto)
+  # ------------------------------------------------------------------
+  ms-opinion:
+    build: ./ms-opinion
+    container_name: ms-opinion
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-cliente:
+        condition: service_started
+      ms-producto:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_opinion_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      MS_CLIENTE_URL: http://ms-cliente:8082/api/clientes
+      MS_PRODUCTO_URL: http://ms-producto:8080/api/productos
+    ports:
+      - "8088:8088"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
+  # ms-notificacion (depende de ms-cliente)
+  # ------------------------------------------------------------------
+  ms-notificacion:
+    build: ./ms-notificacion
+    container_name: ms-notificacion
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ms-cliente:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ms_notificacion_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      MS_CLIENTE_URL: http://ms-cliente:8082/api/clientes
+    ports:
+      - "8089:8089"
+    networks:
+      - microservicios-net
+
+  # ------------------------------------------------------------------
   # ms-gateway (API Gateway) - depende de que los demas ya esten arriba
   # ------------------------------------------------------------------
   ms-gateway:
@@ -145,14 +252,22 @@ services:
       - ms-cliente
       - ms-pedido
       - ms-pago
+      - ms-categoria
+      - ms-envio
+      - ms-cupon
+      - ms-opinion
+      - ms-notificacion
     environment:
-      # Le decimos al Gateway donde vive cada microservicio DENTRO de la red
-      # de Docker (por nombre de servicio, no por localhost)
       MS_PRODUCTO_URL: http://ms-producto:8080
       MS_INVENTARIO_URL: http://ms-inventario:8081
       MS_CLIENTE_URL: http://ms-cliente:8082
       MS_PEDIDO_URL: http://ms-pedido:8083
       MS_PAGO_URL: http://ms-pago:8084
+      MS_CATEGORIA_URL: http://ms-categoria:8085
+      MS_ENVIO_URL: http://ms-envio:8086
+      MS_CUPON_URL: http://ms-cupon:8087
+      MS_OPINION_URL: http://ms-opinion:8088
+      MS_NOTIFICACION_URL: http://ms-notificacion:8089
     ports:
       - "8090:8090"
     networks:
