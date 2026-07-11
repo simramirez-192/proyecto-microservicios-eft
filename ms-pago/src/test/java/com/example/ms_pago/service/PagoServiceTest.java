@@ -71,6 +71,15 @@ class PagoServiceTest {
     }
 
     @Test
+    void buscarPorId_pagoExistente_retornaDTO() {
+        when(pagoRepository.findById(1L)).thenReturn(Optional.of(pago));
+
+        PagoResponseDTO resultado = pagoService.buscarPorId(1L);
+
+        assertEquals("PAGADO", resultado.getEstado());
+    }
+
+    @Test
     void crearPago_pedidoExiste_tomaElMontoDelPedido() {
         when(pedidoClient.obtenerPedidoPorId(7L)).thenReturn(pedidoDTO);
         when(pagoRepository.save(any(Pago.class))).thenReturn(pago);
@@ -90,6 +99,27 @@ class PagoServiceTest {
         assertThrows(RuntimeException.class,
                 () -> pagoService.crearPago(requestDTO));
 
+        verify(pagoRepository, never()).save(any());
+    }
+
+    @Test
+    void actualizarPago_datosValidos_actualizaCorrectamente() {
+        when(pagoRepository.findById(1L)).thenReturn(Optional.of(pago));
+        when(pedidoClient.obtenerPedidoPorId(7L)).thenReturn(pedidoDTO);
+        when(pagoRepository.save(any(Pago.class))).thenReturn(pago);
+
+        PagoResponseDTO resultado = pagoService.actualizarPago(1L, requestDTO);
+
+        assertEquals(31980.0, resultado.getMonto());
+        verify(pagoRepository).save(pago);
+    }
+
+    @Test
+    void actualizarPago_pedidoNoExiste_lanzaExcepcion() {
+        when(pagoRepository.findById(1L)).thenReturn(Optional.of(pago));
+        when(pedidoClient.obtenerPedidoPorId(7L)).thenReturn(null);
+
+        assertThrows(RuntimeException.class, () -> pagoService.actualizarPago(1L, requestDTO));
         verify(pagoRepository, never()).save(any());
     }
 

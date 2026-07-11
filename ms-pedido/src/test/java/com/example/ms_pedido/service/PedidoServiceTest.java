@@ -84,6 +84,18 @@ class PedidoServiceTest {
     }
 
     @Test
+    void buscarPorId_pedidoExistente_retornaDTO() {
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(clienteClient.obtenerClientePorId(5L)).thenReturn(clienteDTO);
+        when(productoClient.obtenerProductoPorId(10L)).thenReturn(productoDTO);
+
+        PedidoResponseDTO resultado = pedidoService.buscarPorId(1L);
+
+        assertEquals("Ana Torres", resultado.getNombreCliente());
+        assertEquals("Mouse Gamer", resultado.getNombreProducto());
+    }
+
+    @Test
     void crearPedido_clienteYProductoExisten_calculaTotalCorrectamente() {
         when(clienteClient.obtenerClientePorId(5L)).thenReturn(clienteDTO);
         when(productoClient.obtenerProductoPorId(10L)).thenReturn(productoDTO);
@@ -118,6 +130,19 @@ class PedidoServiceTest {
                 () -> pedidoService.crearPedido(requestDTO));
 
         verify(pedidoRepository, never()).save(any());
+    }
+
+    @Test
+    void actualizarPedido_datosValidos_actualizaCorrectamente() {
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(clienteClient.obtenerClientePorId(5L)).thenReturn(clienteDTO);
+        when(productoClient.obtenerProductoPorId(10L)).thenReturn(productoDTO);
+        when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
+
+        PedidoResponseDTO resultado = pedidoService.actualizarPedido(1L, requestDTO);
+
+        assertEquals(31980.0, resultado.getTotal());
+        verify(pedidoRepository).save(pedido);
     }
 
     @Test

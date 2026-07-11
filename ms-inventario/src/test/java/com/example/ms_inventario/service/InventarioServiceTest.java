@@ -119,6 +119,27 @@ class InventarioServiceTest {
     }
 
     @Test
+    void actualizarInventario_datosValidos_actualizaCorrectamente() {
+        when(inventarioRepository.findById(1L)).thenReturn(Optional.of(inventario));
+        when(productoClient.obtenerProductoPorId(10L)).thenReturn(productoDTO);
+        when(inventarioRepository.save(any(Inventario.class))).thenReturn(inventario);
+
+        InventarioResponseDTO resultado = inventarioService.actualizarInventario(1L, requestDTO);
+
+        assertEquals("Mouse Gamer", resultado.getNombreProducto());
+        verify(inventarioRepository).save(inventario);
+    }
+
+    @Test
+    void actualizarInventario_productoNoExiste_lanzaExcepcion() {
+        when(inventarioRepository.findById(1L)).thenReturn(Optional.of(inventario));
+        when(productoClient.obtenerProductoPorId(10L)).thenReturn(null);
+
+        assertThrows(RuntimeException.class, () -> inventarioService.actualizarInventario(1L, requestDTO));
+        verify(inventarioRepository, never()).save(any());
+    }
+
+    @Test
     void eliminarInventario_inventarioExistente_eliminaCorrectamente() {
         when(inventarioRepository.existsById(1L)).thenReturn(true);
         doNothing().when(inventarioRepository).deleteById(1L);
