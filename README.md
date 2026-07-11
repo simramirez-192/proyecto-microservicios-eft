@@ -21,7 +21,7 @@ y los pagos generados a partir de esos pedidos.
 
 ## Estudiantes
 
-- **Jazmin Soto**
+- **Simon Ramirez**
 - **Jorge Delgado**
 
 ## Microservicios implementados
