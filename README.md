@@ -24,6 +24,10 @@ y los pagos generados a partir de esos pedidos.
 - **Simon Ramirez**
 - **Jorge Delgado**
 
+## Gestion del proyecto
+
+- **Tablero Trello:** [COMPLETAR CON EL LINK DEL TABLERO]
+
 ## Microservicios implementados
 
 | Microservicio  | Puerto | Descripcion                                                               |

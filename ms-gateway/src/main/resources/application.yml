@@ -3,7 +3,7 @@
 # =========================================================
 
 server:
-  port: 8090   # Puerto UNICO por el que entra TODO el trafico
+  port: ${PORT:8090}   # Puerto UNICO por el que entra TODO el trafico
 
 spring:
   application:
@@ -39,6 +39,31 @@ spring:
           uri: ${MS_PAGO_URL:http://localhost:8084}
           predicates:
             - Path=/api/pagos/**
+
+        - id: ms-categoria
+          uri: ${MS_CATEGORIA_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/categorias/**
+
+        - id: ms-envio
+          uri: ${MS_ENVIO_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/envios/**
+
+        - id: ms-cupon
+          uri: ${MS_CUPON_URL:http://localhost:8087}
+          predicates:
+            - Path=/api/cupones/**
+
+        - id: ms-opinion
+          uri: ${MS_OPINION_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/opiniones/**
+
+        - id: ms-notificacion
+          uri: ${MS_NOTIFICACION_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/notificaciones/**
 
 # ---------------------------------------------------------
 # Como funciona el "${MS_PRODUCTO_URL:http://localhost:8080}":
