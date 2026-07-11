@@ -2,28 +2,33 @@ package com.example.ms_pago.client;
 
 import com.example.ms_pago.dto.PedidoDTO;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-// Esta clase es la unica responsable de "hablar" con ms-pedido.
-// Si el dia de mañana ms-pedido cambia de URL, solo tocas este archivo.
 @Component
 @RequiredArgsConstructor
 public class PedidoClient {
 
-    private final RestTemplate restTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(PedidoClient.class);
+    private final WebClient webClient;
 
     @Value("${ms.pedido.url}")
     private String pedidoUrl;
 
-    // Llama a GET http://localhost:8083/api/pedidos/{id}
     public PedidoDTO obtenerPedidoPorId(Long pedidoId) {
         try {
-            return restTemplate.getForObject(pedidoUrl + "/" + pedidoId, PedidoDTO.class);
-        } catch (RestClientException e) {
-            // Si ms-pedido no responde o el pedido no existe, devolvemos null
+            PedidoDTO pedido = webClient.get()
+                    .uri(pedidoUrl + "/{id}", pedidoId)
+                    .retrieve()
+                    .bodyToMono(PedidoDTO.class)
+                    .block();
+            logger.info("Pedido obtenido exitosamente: id={}", pedidoId);
+            return pedido;
+        } catch (Exception e) {
+            logger.warn("No se pudo obtener el pedido con id={}: {}", pedidoId, e.getMessage());
             return null;
         }
     }

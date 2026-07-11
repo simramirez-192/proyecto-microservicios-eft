@@ -1,34 +1,102 @@
 # Proyecto Microservicios
 
-## Descripción del contexto / dominio
+## Stack Tecnologico
 
-Sistema de gestión de una tienda basado en arquitectura de microservicios. Permite administrar el catálogo de
+- **Java 21** + **Spring Boot 4.1.0**
+- **Spring Cloud Gateway** (API Gateway)
+- **Spring WebFlux** (WebClient para comunicacion entre servicios)
+- **Spring Data JPA + Hibernate** (persistencia)
+- **MySQL 8** (base de datos)
+- **Lombok** (reduccion de boilerplate)
+- **SpringDoc OpenAPI** (documentacion Swagger)
+- **JUnit 5 + Mockito** (pruebas unitarias)
+- **JaCoCo** (cobertura de codigo)
+- **Docker + Docker Compose** (despliegue)
+
+## Descripcion del contexto / dominio
+
+Sistema de gestion de una tienda basado en arquitectura de microservicios. Permite administrar el catalogo de
 productos, el stock disponible (inventario), los clientes, los pedidos que realizan (asociando cliente + producto)
 y los pagos generados a partir de esos pedidos.
 
 ## Estudiantes
 
-- Nombre Apellido 1
-- Nombre Apellido 2
-- (completar con los integrantes del equipo)
+- **Jazmin Soto** (completar con los integrantes reales del equipo)
 
 ## Microservicios implementados
 
-| Microservicio  | Puerto | Descripción                                                                 |
+| Microservicio  | Puerto | Descripcion                                                               |
 |-----------------|--------|-------------------------------------------------------------------------------|
-| `ms-producto`   | 8080   | CRUD del catálogo de productos.                                              |
+| `ms-producto`   | 8080   | CRUD del catalogo de productos.                                              |
 | `ms-inventario` | 8081   | CRUD de stock disponible. Consume `ms-producto` para validar el producto.    |
 | `ms-cliente`    | 8082   | CRUD de clientes.                                                             |
 | `ms-pedido`     | 8083   | CRUD de pedidos. Consume `ms-cliente` y `ms-producto` para armar el pedido.  |
 | `ms-pago`       | 8084   | CRUD de pagos. Consume `ms-pedido` para obtener el monto a pagar.            |
-| `ms-gateway`    | 8090   | API Gateway (Spring Cloud Gateway). Punto de entrada único a todo el sistema. |
+| `ms-gateway`    | 8090   | API Gateway (Spring Cloud Gateway). Punto de entrada unico a todo el sistema. |
 
-Cada microservicio sigue el patrón **CSR (Controller – Service – Repository/Model)**, con DTOs de entrada/salida,
+Cada microservicio sigue el patron **CSR (Controller - Service - Repository/Model)**, con DTOs de entrada/salida,
 validaciones con Bean Validation, manejo centralizado de errores (`@RestControllerAdvice`) y logs con SLF4J.
+
+## Arquitectura y comunicacion entre servicios
+
+```
+                    ┌─────────────┐
+                    │ ms-gateway  │
+                    │   :8090     │
+                    └──────┬──────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+        ▼                  ▼                  ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│ ms-producto   │  │ ms-cliente    │  │ ms-inventario  │
+│    :8080      │  │    :8082      │  │    :8081       │
+└───────────────┘  └───────────────┘  └───────┬───────┘
+                                              │
+        ┌─────────────────────────────────────┘
+        │ WebClient
+        ▼
+┌───────────────┐
+│ ms-producto   │
+│    :8080      │
+└───────────────┘
+
+┌───────────────┐        ┌───────────────┐
+│ ms-pedido     │◄──────►│ ms-cliente    │
+│    :8083      │        │    :8082      │
+└───────┬───────┘        └───────────────┘
+        │
+        │ WebClient
+        ▼
+┌───────────────┐
+│ ms-producto   │
+│    :8080      │
+└───────────────┘
+
+┌───────────────┐
+│ ms-pago       │
+│    :8084      │
+└───────┬───────┘
+        │ WebClient
+        ▼
+┌───────────────┐
+│ ms-pedido     │
+│    :8083      │
+└───────────────┘
+```
+
+**Comunicacion entre servicios:** WebClient (Spring WebFlux)
+
+| Servicio consumidor | Servicio consumido | Metodo |
+|---------------------|-------------------|--------|
+| ms-inventario | ms-producto | GET /api/productos/{id} |
+| ms-pedido | ms-producto | GET /api/productos/{id} |
+| ms-pedido | ms-cliente | GET /api/clientes/{id} |
+| ms-pago | ms-pedido | GET /api/pedidos/{id} |
 
 ## Rutas principales del Gateway
 
-Todas las peticiones pueden hacerse directamente a cada microservicio, o de forma centralizada a través del Gateway
+Todas las peticiones pueden hacerse directamente a cada microservicio, o de forma centralizada a traves del Gateway
 en el puerto **8090**:
 
 - `http://localhost:8090/api/productos`
@@ -37,9 +105,9 @@ en el puerto **8090**:
 - `http://localhost:8090/api/pedidos`
 - `http://localhost:8090/api/pagos`
 
-## Documentación Swagger / OpenAPI
+## Documentacion Swagger / OpenAPI
 
-Cada microservicio expone su propia documentación interactiva (no aplica a `ms-gateway`, que no tiene endpoints
+Cada microservicio expone su propia documentacion interactiva (no aplica a `ms-gateway`, que no tiene endpoints
 propios):
 
 - ms-producto: `http://localhost:8080/swagger-ui/index.html`
@@ -48,9 +116,61 @@ propios):
 - ms-pedido: `http://localhost:8083/swagger-ui/index.html`
 - ms-pago: `http://localhost:8084/swagger-ui/index.html`
 
-## Instrucciones de ejecución
+## Endpoints principales
 
-### Local (con Laragon/MySQL corriendo en el equipo)
+### ms-producto (puerto 8080)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/productos | Listar todos los productos |
+| GET | /api/productos/{id} | Obtener producto por ID |
+| POST | /api/productos | Crear nuevo producto |
+| PUT | /api/productos/{id} | Actualizar producto |
+| DELETE | /api/productos/{id} | Eliminar producto |
+
+### ms-inventario (puerto 8081)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/inventario | Listar todo el inventario |
+| GET | /api/inventario/{id} | Obtener inventario por ID |
+| POST | /api/inventario | Crear registro de inventario |
+| PUT | /api/inventario/{id} | Actualizar inventario |
+| DELETE | /api/inventario/{id} | Eliminar inventario |
+
+### ms-cliente (puerto 8082)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/clientes | Listar todos los clientes |
+| GET | /api/clientes/{id} | Obtener cliente por ID |
+| POST | /api/clientes | Crear nuevo cliente |
+| PUT | /api/clientes/{id} | Actualizar cliente |
+| DELETE | /api/clientes/{id} | Eliminar cliente |
+
+### ms-pedido (puerto 8083)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/pedidos | Listar todos los pedidos |
+| GET | /api/pedidos/{id} | Obtener pedido por ID |
+| POST | /api/pedidos | Crear nuevo pedido |
+| PUT | /api/pedidos/{id} | Actualizar pedido |
+| DELETE | /api/pedidos/{id} | Eliminar pedido |
+
+### ms-pago (puerto 8084)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | /api/pagos | Listar todos los pagos |
+| GET | /api/pagos/{id} | Obtener pago por ID |
+| POST | /api/pagos | Crear nuevo pago |
+| PUT | /api/pagos/{id} | Actualizar pago |
+| DELETE | /api/pagos/{id} | Eliminar pago |
+
+## Instrucciones de ejecucion
+
+### Local (con MySQL corriendo en el equipo)
 
 Cada microservicio es un proyecto Maven independiente. Para levantar uno:
 
@@ -64,13 +184,13 @@ para que las dependencias entre servicios funcionen correctamente al consultarlo
 
 ### Con Docker
 
-Desde la raíz del proyecto (donde está `docker-compose.yml`):
+Desde la raiz del proyecto (donde esta `docker-compose.yml`):
 
 ```bash
 docker compose up --build
 ```
 
-Esto levanta MySQL (con las 5 bases de datos creadas automáticamente) y los 6 microservicios en una misma red.
+Esto levanta MySQL (con las 5 bases de datos creadas automaticamente) y los 6 microservicios en una misma red.
 
 Para apagar todo:
 
@@ -91,3 +211,41 @@ mvn test
 ```
 
 Repetir en cada carpeta de microservicio.
+
+### Cobertura de codigo (JaCoCo)
+
+Para generar el reporte de cobertura:
+
+```bash
+cd ms-producto
+mvn test jacoco:report
+```
+
+El reporte se genera en `target/site/jacoco/index.html`. Se requiere minimo **80% de cobertura**.
+
+## Estructura del proyecto (patron CSR)
+
+```
+ms-producto/
+├── src/main/java/com/example/ms_producto/
+│   ├── controller/          # Endpoints REST
+│   │   └── ProductoController.java
+│   ├── service/             # Logica de negocio
+│   │   ├── ProductoService.java
+│   │   └── ProductoServiceImpl.java
+│   ├── repository/          # Acceso a datos
+│   │   └── ProductoRepository.java
+│   ├── model/               # Entidades JPA
+│   │   └── Producto.java
+│   ├── dto/                 # DTOs de entrada/salida
+│   │   ├── ProductoRequestDTO.java
+│   │   └── ProductoResponseDTO.java
+│   ├── exception/           # Manejo centralizado de errores
+│   │   └── GlobalExceptionHandler.java
+│   └── MsProductoApplication.java
+├── src/test/java/           # Pruebas unitarias
+│   └── ProductoServiceTest.java
+├── pom.xml
+├── Dockerfile
+└── application.yml
+```

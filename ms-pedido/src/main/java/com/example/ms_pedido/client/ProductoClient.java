@@ -2,28 +2,33 @@ package com.example.ms_pedido.client;
 
 import com.example.ms_pedido.dto.ProductoDTO;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-// Esta clase es la unica responsable de "hablar" con ms-producto.
-// Si el dia de mañana ms-producto cambia de URL, solo tocas este archivo.
 @Component
 @RequiredArgsConstructor
 public class ProductoClient {
 
-    private final RestTemplate restTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(ProductoClient.class);
+    private final WebClient webClient;
 
     @Value("${ms.producto.url}")
     private String productoUrl;
 
-    // Llama a GET http://localhost:8080/api/productos/{id}
     public ProductoDTO obtenerProductoPorId(Long productoId) {
         try {
-            return restTemplate.getForObject(productoUrl + "/" + productoId, ProductoDTO.class);
-        } catch (RestClientException e) {
-            // Si ms-producto no responde o el producto no existe, devolvemos null
+            ProductoDTO producto = webClient.get()
+                    .uri(productoUrl + "/{id}", productoId)
+                    .retrieve()
+                    .bodyToMono(ProductoDTO.class)
+                    .block();
+            logger.info("Producto obtenido exitosamente: id={}", productoId);
+            return producto;
+        } catch (Exception e) {
+            logger.warn("No se pudo obtener el producto con id={}: {}", productoId, e.getMessage());
             return null;
         }
     }
